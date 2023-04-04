@@ -1,12 +1,13 @@
 package utils
 
 import (
-	"crypto/tls"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/mr-emerald-wolf/mailer-go/initializers"
-	"gopkg.in/gomail.v2"
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
 
 type SendEmailRequest struct {
@@ -19,31 +20,22 @@ func init() {
 }
 
 func SendMail(s string, b string) error {
-	m := gomail.NewMessage()
+	from := mail.NewEmail("No Reply @CodeChef-VIT", os.Getenv("FROM_EMAIL"))
+	subject := s
+	to := mail.NewEmail("CodeChef-VIT", os.Getenv("TO_EMAIL"))
+	plainTextContent := b
 
-	// Set E-Mail sender
-	m.SetHeader("From", os.Getenv("SENDER_MAIL"))
-
-	// Set E-Mail receivers
-	m.SetHeader("To", os.Getenv("RECIEVER_MAIL"))
-
-	// Set E-Mail subject
-	m.SetHeader("Subject", s)
-
-	// Set E-Mail body. You can set plain text or html with text/html
-	m.SetBody("text/plain", b)
-
-	// Settings for SMTP server
-	d := gomail.NewDialer("smtp.gmail.com", 587, os.Getenv("SENDER_MAIL"), os.Getenv("SENDER_PASS"))
-
-	// This is only needed when SSL/TLS certificate is not valid on server.
-	// In production this should be set to false.
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-
-	// Now send E-Mail
-	err := d.DialAndSend(m)
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, "")
+	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
+	response, err := client.Send(message)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
+
+	} else {
+		fmt.Println(response.StatusCode)
+		fmt.Println(response.Body)
+		fmt.Println(response.Headers)
 	}
+
 	return err
 }
